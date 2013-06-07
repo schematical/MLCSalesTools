@@ -1,6 +1,6 @@
 <?php
 MLCApplication::InitPackage('MLCMailChimp');
-class MJaxPreSignupForm extends MJaxForm{
+class MJaxPreSignupForm extends MLCForm{
     const PRESIGNUP_EVENT = "MST_PRESIGNUP_EVENT";
     protected $arrHeadline = array();
     protected $arrBody = array();
@@ -126,7 +126,7 @@ class MJaxPreSignupForm extends MJaxForm{
     }
     public function btnSignup_click(){
         $blnValid = true;
-        if(strlen($this->txtEmail->Text) < 2){
+        if(!filter_var($this->txtEmail->Text, FILTER_VALIDATE_EMAIL)){
            $blnValid = false;
         }
         foreach($this->arrExtraFields as $strKey => $txtField){
@@ -138,9 +138,9 @@ class MJaxPreSignupForm extends MJaxForm{
             return $this->Alert('Please fill out all fields');
         }
         $this->blnSignUp = true;
-        $this->Alert($this->pnlSuccess);
-    }
-    public function Form_Exit(){
+
+    //}
+    //public function Form_Exit(){
         if(!$this->blnSignUp){
             return false;
         }
@@ -150,11 +150,15 @@ class MJaxPreSignupForm extends MJaxForm{
             $arrMergeData[$ctlField->Name] = $ctlField->Text;
         }
         error_log("List Subscribe");//Some BS
-        MLCMailChimpDriver::ListSubscribe(
-            MAILCHIMP_LIST_ID,
-            $this->txtEmail->Text,
-            $arrMergeData
-        );
+        try{
+            MLCMailChimpDriver::ListSubscribe(
+                MAILCHIMP_LIST_ID,
+                $this->txtEmail->Text,
+                $arrMergeData
+            );
+        }catch(Exception $e){
+            return $this->Alert($e->getMessage());
+        }
         error_log("TV1");
         $this->TrackVariation(
             'imgBackground',
@@ -181,12 +185,13 @@ class MJaxPreSignupForm extends MJaxForm{
         );
         //asdf
         error_log("TriggerNotification");
-        MSTDriver::TriggerNotification(
+        /*MSTDriver::TriggerNotification(
             'New User Signup: ' . $this->txtEmail->Text,
             $arrMergeData
-        );
+        );*/
         error_log("Fin");
         $this->blnSignUp = false;
+        $this->Success();
     }
     /////////////////////////
     // Public Properties: GET
